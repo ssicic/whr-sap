@@ -1,30 +1,49 @@
 ---
-title: "whr_sap"
-author: "xaea-xii"
-date: "12/6/2021"
+title: "World Happiness Report"
+author: "X Æ A-Xii"
+date: "6.12.2021."
 output: html_document
 ---
+```{r setup, include=FALSE} 
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library("readxl")
+```
+## Motivacija i opis problema
+World Happiness Report je publikacija Mreže rješenja za održivi razvoj Ujedinjenih naroda koja sadrži po-
+datke o osjećaju sreće pojedinih nacija. Podatci su dobiveni kroz ankete koje provode Gallup i Lloyd’s
+Register Foundation. Prvi je izvještaj objavljen 2012. godine, a od 2016. se objavljuje na Međunarodni dan
+sreće 20. ožujka.
+
+### Učitavanje podataka o svjetskom bogatstvu 2021. godine
+
+```{r wealth} 
+wealth_data <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/credit_suisse_global_wealth_databook_2021_table_31.xlsx")
+
+dim(wealth_data)
+head(wealth_data)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
+### Učitavanje podataka o globalnoj sreći 2020. godine
 
 You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r whr 2020}
+whr2020_data <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2020.xlsx")
+
+dim(whr2020_data)
+head(whr2020_data)
+```
+
+### Učitavanje podataka o globalnoj sreći 2021. godine
+
+You can also embed plots, for example:
+
+```{r whr 2021}
+whr2021_data <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2021.xlsx")
+
+dim(whr2021_data)
+head(whr2021_data)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
