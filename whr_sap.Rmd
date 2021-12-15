@@ -17,7 +17,7 @@ sreće 20. ožujka.
 ### Učitavanje podataka o svjetskom bogatstvu 2021. godine
 
 ```{r wealth} 
-wealth_data <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/credit_suisse_global_wealth_databook_2021_table_31.xlsx")
+wealth_data <- read_excel("E:/FER/Statistička analiza podataka/Projekt/files/credit_suisse_global_wealth_databook_2021_table_31.xlsx")
 
 dim(wealth_data)
 head(wealth_data)
@@ -29,7 +29,7 @@ head(wealth_data)
 You can also embed plots, for example:
 
 ```{r whr 2020}
-whr2020_data <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2020.xlsx")
+whr2020_data <- read_excel("E:/FER/Statistička analiza podataka/Projekt/files/WHR_2020.xlsx")
 
 dim(whr2020_data)
 head(whr2020_data)
@@ -40,10 +40,24 @@ head(whr2020_data)
 You can also embed plots, for example:
 
 ```{r whr 2021}
-whr2021_data <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2021.xlsx")
+whr2021_data <- read_excel("E:/FER/Statistička analiza podataka/Projekt/files/WHR_2021.xlsx")
 
 dim(whr2021_data)
 head(whr2021_data)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+3. Pitanje za proucavanje:
+  Postoje li razlike u iskazanoj sreci medu razlicitim regijama?
+
+U sljedecem isjecku ce mo prikazati box plot dijagrame srece po pojedinim regijama da vizualno nademo kandidate koji imaju vecu srecu nego ostali.
+
+```{r}
+
+boxplot(`Ladder score`~`Regional indicator`,data = whr2021_data)
+```
+
+Iz box plot dijagrama se vidi da regije Zapadna Europa i Sjeverna amerika i australija imaju vece vrijednosti od ostalih regija
+
+Sada ce mo provesti testiranje o jednakosti srednjih vrijednosti jedne regije naprem ostalog svijeta preko z statistike
