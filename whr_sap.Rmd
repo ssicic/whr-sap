@@ -58,6 +58,20 @@ U sljedecem isjecku ce mo prikazati box plot dijagrame srece po pojedinim regija
 boxplot(`Ladder score`~`Regional indicator`,data = whr2021_data)
 ```
 
-Iz box plot dijagrama se vidi da regije Zapadna Europa i Sjeverna amerika i australija imaju vece vrijednosti od ostalih regija
+Iz box plot dijagrama primjecuje se da regije Sjeverna amerika i Australija te Zapadne europe.Pogledajmo sada njihove srednje vrijednosti.
 
-Sada ce mo provesti testiranje o jednakosti srednjih vrijednosti jedne regije naprem ostalog svijeta preko z statistike
+```{r}
+
+sjeverna_amerika_i_australija = whr2021_data[whr2021_data$`Regional indicator` == "North America and ANZ",]
+sjeverna_europa = whr2021_data[whr2021_data$`Regional indicator` == "Western Europe",]
+
+cat('Prosjecna sreca ukupnog svijeta je ',mean(whr2021_data$`Ladder score`),'\n')
+cat('Prosjecna sreca Sjeverne amerike i Australije je ',mean(sjeverna_amerika_i_australija$`Ladder score`),'\n')
+cat('Prosjecna sreca Sjeverne europe je ',mean(sjeverna_europa$`Ladder score`),'\n')
+
+boxplot(whr2021_data$`Ladder score`,sjeverna_amerika_i_australija$`Ladder score`,sjeverna_europa$`Ladder score`,
+        names = c('Svijet','Sjeverna amerika i australija','Sjeverna europa'),
+        main = 'Box plot srece svijeta, sjeverne amerike i austarlije i sjeverne europe'
+        )
+
+```
