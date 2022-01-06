@@ -1,0 +1,135 @@
+---
+title: "World Happiness Report"
+author: "X Æ A-Xii"
+date: "6.12.2021."
+output: html_document
+---
+```{r setup, include=FALSE} 
+
+library("readxl")
+```
+## Motivacija i opis problema
+World Happiness Report je publikacija Mreže rješenja za održivi razvoj Ujedinjenih naroda koja sadrži po-
+datke o osjećaju sreće pojedinih nacija. Podatci su dobiveni kroz ankete koje provode Gallup i Lloyd’s
+Register Foundation. Prvi je izvještaj objavljen 2012. godine, a od 2016. se objavljuje na Međunarodni dan
+sreće 20. ožujka.
+
+### Učitavanje podataka o svjetskom bogatstvu 2021. godine
+
+```{r wealth} 
+wealth_data <- read_excel("C:/Users/Marin Avirović/Documents/Faks/3. godina/5. semestar/Statistička analiza podataka/projekt/kod/files/credit_suisse_global_wealth_databook_2021_table_31.xlsx")
+
+dim(wealth_data)
+head(wealth_data)
+```
+
+
+### Učitavanje podataka o globalnoj sreći 2020. godine
+
+You can also embed plots, for example:
+
+```{r whr 2020}
+whr2020_data <- read_excel("C:/Users/Marin Avirović/Documents/Faks/3. godina/5. semestar/Statistička analiza podataka/projekt/kod/files/WHR_2020.xlsx")
+
+dim(whr2020_data)
+head(whr2020_data)
+```
+
+### Učitavanje podataka o globalnoj sreći 2021. godine
+
+You can also embed plots, for example:
+
+```{r whr 2021}
+whr2021_data <- read_excel("C:/Users/Marin Avirović/Documents/Faks/3. godina/5. semestar/Statistička analiza podataka/projekt/kod/files/WHR_2021.xlsx")
+
+dim(whr2021_data)
+head(whr2021_data)
+```
+
+### Je li razina sreće veća u 2020. ili 2021. godini?
+
+Ovo pitanje ćemo provjeravati uparenim t-testom.
+Podaci koje koristimo su razlike rezultata WHR-a u 2021. i 2020. godini za iste države. 
+
+Prvo ćemo napraviti dva boxplota kako bi vizualizirali podatke za pojedinu godinu.
+
+```{r boxplot for ladder scores}
+boxplot(whr2020_data$`Ladder score`, whr2021_data$`Ladder score`, names = c("Ladder scores in 2020.", "Ladder scores in 2021."))
+```
+
+Vidimo da su srednje vrijednosti rezultata za obje godine otprilike jednake.
+
+Sada ćemo prikazati razlike rezultata pomoću histograma kako bismo se uvjerili u normalnost podataka, budući da je to uvjet za provođenje uparenog t-testa.
+
+Također ćemo ih prikazati pomoću boxplota, da lakše uoćimo stršeće vrijednosti.
+
+```{r histogram for ladder score differences}
+whr_merged = merge(whr2021_data, whr2020_data, by="Country name")
+ladderScore_differences = whr_merged$`Ladder score.x`- whr_merged$`Ladder score.y`
+
+hist(ladderScore_differences, xlab="Ladder score difference", main="Histogram of the differences between ladder scores in 2021. and 2020.")
+boxplot(ladderScore_differences, main="Boxplot of the differences between ladder scores in 2021. and 2020.")
+```
+
+Mogli bismo otprilike reći da podaci jesu normalno distribuirani, no da su ipak više zbijeni oko sredine.
+
+S ciljem povećavanja normalnosti, izbacit ćemo stršeće vrijednosti te ponovno prikazati histogram i boxplot dobivenih podataka.
+
+```{r getting rid of outliers}
+ladderScore_differences_no_outliers = ladderScore_differences[!ladderScore_differences %in% boxplot.stats(ladderScore_differences)$out]
+
+length(ladderScore_differences) - length(ladderScore_differences_no_outliers)
+
+hist(ladderScore_differences_no_outliers, xlab="Ladder score difference", main="Histogram of ladder score differences without outliers")
+boxplot(ladderScore_differences_no_outliers, main="Boxplot of ladder score differences without outliers")
+
+```
+
+Uočavamo da su nam sadašnji podaci distribuirani puno više normalno, nego što su prije bili, a izbacili smo samo 8 vrijednosti.
+
+Da bismo se uvjerili u normalnost podataka, možemo je provjeriti i pomoću qq-plota.
+
+```{r qq-plot for ladder score differences}
+qqnorm(ladderScore_differences_no_outliers, pch = 1, frame = FALSE, main="Differences between ladder scores in 2021. and 2020.")
+qqline(ladderScore_differences_no_outliers, col = "steelblue", lwd = 2)
+```
+
+Kao i histogram, qq-plot nam upućuje na normalnost podataka. Jeini podaci koji se ne ravnaju savršeno po normalnoj distribuciji su oni rubni.
+
+Još da budemo sasvim sigurni u normalnost naših podataka, provest ćemo Kolmogorov-Smirnovljev test. Hipoteze su nam sljedeće:
+$$ \begin{aligned}
+H_0&: \text{podaci su normalno distribuirani} \\
+H_1&: \text{podaci nisu normalno distribuirani}
+\end{aligned} $$
+
+```{r ks test for ladder score differences}
+ks.test(ladderScore_differences_no_outliers, "pnorm", mean(ladderScore_differences_no_outliers), sd(ladderScore_differences_no_outliers))
+```
+
+Budući da je p-vrijednost znatno veća od 0.05, ne odbijamo nul hipotezu o normalnosti podataka te možemo krenuti s obostranim t-testom.
+
+Hipoteze nam glase ovako:
+$$ \begin{aligned}
+H_0&: \mu_\text{2021} = \mu_\text{2020} \\
+H_1&: \mu_\text{2021} \neq \mu_\text{2020} \\
+\end{aligned} $$
+
+```{r paired two-sided t-test for ladder score differences}
+t.test(whr_merged$`Ladder score.x`, whr_merged$`Ladder score.y`, paired=TRUE, alternative="two.sided",conf.level = 0.95)
+```
+
+Budući da smo dobili p-vrijednost manju od 0.05, odbijamo hipotezu o jednakosti rezultata WHR-a u 2020. i 2021. godini u korist alternativne hipoteze.
+
+Provest ćemo još jedan t-test, no ovaj put jednostrani sa sljedećim hipotezama:
+$$ \begin{aligned}
+H_0&: \mu_\text{2021} >= \mu_\text{2020} \\
+H_1&: \mu_\text{2021} < \mu_\text{2020} \\
+\end{aligned} $$
+
+```{r paired one-sided t-test for ladder score differences}
+t.test(whr_merged$`Ladder score.x`, whr_merged$`Ladder score.y`, paired=TRUE, alternative="greater",conf.level = 0.95)
+```
+
+Zbog p-vrijednosti manje od 0.05, odbijamo nul hipotezu i prihvaćemo alternativnu, odnosno da je razina sreće manja u 2021. nego što je bila u 2020. godini.
+
+Moguće objašnjenje ovakvog rezultata je činjenica da su podaci WHR-a za svaku godinu objavljeni 20. ožujka, na Međunarodni dan sreće. To znači da su podaci za 2020. godinu prikupljani prije pandemije bolesti Covid-19, dok su podaci za 2021. godinu prikupljani dok je pandemija već trajala.
