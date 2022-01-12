@@ -77,24 +77,34 @@ te $$ \alpha = 0.05 $$
 ```{r ks test for all regions for ladder score}
 
 ks.test(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Central and Eastern Europe'], "pnorm", mean(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Central and Eastern Europe']),sd(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Central and Eastern Europe']))
+hist(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Central and Eastern Europe'])
 
 ks.test(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Commonwealth of Independent States'], "pnorm", mean(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Commonwealth of Independent States']),sd(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Commonwealth of Independent States']))
+hist(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Commonwealth of Independent States'])
 
 ks.test(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='East Asia'], "pnorm", mean(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='East Asia']),sd(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='East Asia']))
+hist(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='East Asia'])
 
 ks.test(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Latin America and Caribbean'], "pnorm", mean(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Latin America and Caribbean']),sd(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Latin America and Caribbean']))
+hist(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Latin America and Caribbean'])
 
 ks.test(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Middle East and North Africa'], "pnorm", mean(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Middle East and North Africa']),sd(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Middle East and North Africa']))
+hist(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Middle East and North Africa'])
 
 ks.test(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='North America and ANZ'], "pnorm", mean(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='North America and ANZ']),sd(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='North America and ANZ']))
+hist(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='North America and ANZ'])
 
 ks.test(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='South Asia'], "pnorm", mean(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='South Asia']),sd(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='South Asia']))
+hist(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='South Asia'])
 
 ks.test(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Southeast Asia'], "pnorm", mean(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Southeast Asia']),sd(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Southeast Asia']))
+hist(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Southeast Asia'])
 
 ks.test(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Sub-Saharan Africa'], "pnorm", mean(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Sub-Saharan Africa']),sd(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Sub-Saharan Africa']))
+hist(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Sub-Saharan Africa'])
 
 ks.test(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Western Europe'], "pnorm", mean(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Western Europe']),sd(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Western Europe']))
+hist(whr2021_data$`Ladder score`[whr2021_data$`Regional indicator`=='Western Europe'])
 
 ```
 P-vrijednosti na svim testovima su nam veće od kritične vrijednosti te ne odbijamo nul hipotezu.
