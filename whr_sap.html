@@ -176,15 +176,15 @@ pre code {
 <p>World Happiness Report je publikacija Mreže rješenja za održivi razvoj Ujedinjenih naroda koja sadrži po- datke o osjećaju sreće pojedinih nacija. Podatci su dobiveni kroz ankete koje provode Gallup i Lloyd’s Register Foundation. Prvi je izvještaj objavljen 2012. godine, a od 2016. se objavljuje na Međunarodni dan sreće 20. ožujka.</p>
 <div id="učitavanje-podataka-o-svjetskom-bogatstvu-2021.-godine" class="section level3">
 <h3>Učitavanje podataka o svjetskom bogatstvu 2021. godine</h3>
-<pre class="r"><code>wealth_data &lt;- read_excel(&quot;C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/credit_suisse_global_wealth_databook_2021_table_31.xlsx&quot;)</code></pre>
+<pre class="r"><code>wealth &lt;- read_excel(&quot;C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/credit_suisse_global_wealth_databook_2021_table_31.xlsx&quot;)</code></pre>
 <pre><code>## New names:
 ## * `` -&gt; ...6
 ## * `` -&gt; ...7
 ## * `` -&gt; ...8
 ## * `` -&gt; ...9</code></pre>
-<pre class="r"><code>dim(wealth_data)</code></pre>
+<pre class="r"><code>dim(wealth)</code></pre>
 <pre><code>## [1] 169  10</code></pre>
-<pre class="r"><code>head(wealth_data)</code></pre>
+<pre class="r"><code>head(wealth)</code></pre>
 <pre><code>## # A tibble: 6 x 10
 ##   `Country name` `Adults (thousands)` `Mean wealth per adu~ `Median wealth per ~
 ##   &lt;chr&gt;                         &lt;dbl&gt;                 &lt;dbl&gt;                &lt;dbl&gt;
@@ -201,11 +201,11 @@ pre code {
 <div id="učitavanje-podataka-o-globalnoj-sreći-2020.-godine" class="section level3">
 <h3>Učitavanje podataka o globalnoj sreći 2020. godine</h3>
 <p>You can also embed plots, for example:</p>
-<pre class="r"><code>whr2020_data &lt;- read_excel(&quot;C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2020.xlsx&quot;)
+<pre class="r"><code>whr2020 &lt;- read_excel(&quot;C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2020.xlsx&quot;)
 
-dim(whr2020_data)</code></pre>
+dim(whr2020)</code></pre>
 <pre><code>## [1] 153   9</code></pre>
-<pre class="r"><code>head(whr2020_data)</code></pre>
+<pre class="r"><code>head(whr2020)</code></pre>
 <pre><code>## # A tibble: 6 x 9
 ##   `Country name` `Regional indicator` `Ladder score` `Logged GDP per capita`
 ##   &lt;chr&gt;          &lt;chr&gt;                         &lt;dbl&gt;                   &lt;dbl&gt;
@@ -222,11 +222,11 @@ dim(whr2020_data)</code></pre>
 <div id="učitavanje-podataka-o-globalnoj-sreći-2021.-godine" class="section level3">
 <h3>Učitavanje podataka o globalnoj sreći 2021. godine</h3>
 <p>You can also embed plots, for example:</p>
-<pre class="r"><code>whr2021_data &lt;- read_excel(&quot;C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2021.xlsx&quot;)
+<pre class="r"><code>whr2021 &lt;- read_excel(&quot;C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2021.xlsx&quot;)
 
-dim(whr2021_data)</code></pre>
+dim(whr2021)</code></pre>
 <pre><code>## [1] 149  11</code></pre>
-<pre class="r"><code>head(whr2021_data)</code></pre>
+<pre class="r"><code>head(whr2021)</code></pre>
 <pre><code>## # A tibble: 6 x 11
 ##   `Country name` `Regional indicator` `Ladder score` `Logged GDP per capita`
 ##   &lt;chr&gt;          &lt;chr&gt;                         &lt;dbl&gt;                   &lt;dbl&gt;

@@ -2,19 +2,21 @@
 title: "World Happiness Report"
 author: "X Æ A-Xii"
 date: "6.12.2021."
-output: html_document
+output: pdf_document
 ---
-```{r setup, include=FALSE} 
-
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 library("readxl")
+library(imputeTS)
 ```
-## Motivacija i opis problema
-World Happiness Report je publikacija Mreže rješenja za održivi razvoj Ujedinjenih naroda koja sadrži po-
-datke o osjećaju sreće pojedinih nacija. Podatci su dobiveni kroz ankete koje provode Gallup i Lloyd’s
-Register Foundation. Prvi je izvještaj objavljen 2012. godine, a od 2016. se objavljuje na Međunarodni dan
-sreće 20. ožujka.
 
-### Učitavanje podataka o svjetskom bogatstvu 2021. godine
+
+## Možemo li temeljem drugih dostupnih variabli predvidjeti sreću neke nacije? 
+### Koja je od njih najbolji prediktor sreće?
+
+Jedna nacija u našem data setu jednaka jednom retku, te nam je dana varijabla Ladder score, tj. razina sreće, pa imamo podatak o razini sreće svake države. Stoga naslućujemo da je linearna regresija način kako odgovoriti na ova pitanja. Prvo ćemo nadopuniti nedostajuće vrijednosti, a onda se pozabaviti linearnom regresijom.
+
+#### Učitavanje podataka o svjetskom bogatstvu 2021. godine
 
 ```{r wealth} 
 wealth_data <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/credit_suisse_global_wealth_databook_2021_table_31.xlsx")
@@ -24,26 +26,497 @@ head(wealth_data)
 ```
 
 
-### Učitavanje podataka o globalnoj sreći 2020. godine
-
-You can also embed plots, for example:
+#### Učitavanje podataka o globalnoj sreći 2020. godine
 
 ```{r whr 2020}
-whr2020_data <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2020.xlsx")
+whr2020 <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2020.xlsx")
 
-dim(whr2020_data)
-head(whr2020_data)
+dim(whr2020)
+head(whr2020)
 ```
 
-### Učitavanje podataka o globalnoj sreći 2021. godine
-
-You can also embed plots, for example:
+#### Učitavanje podataka o globalnoj sreći 2021. godine
 
 ```{r whr 2021}
-whr2021_data <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2021.xlsx")
+whr2021 <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2021.xlsx")
 
-dim(whr2021_data)
-head(whr2021_data)
+dim(whr2021)
+head(whr2021)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Nadopunjavanje nedostajućih vrijednosti
+
+S obzirom da u stupcima Income Gini i Wealth Gini nedostaju neke vrijednosti, te ćemo vrijednosti nadopuniti prosječnim vrijednostima tih stupaca pomoću paketa imputeTS.
+
+```{r col}
+whr2021$`Wealth Gini` <- na_mean(whr2021$`Wealth Gini`)
+whr2021$`Income Gini` <- na_mean(whr2021$`Income Gini`)
+```
+
+Kako bi znali predvidjeti razinu sreće, možemo ispitati različite varijable koje bi mogle utjecati na sreću:
+
+- GDP
+- socijalna podrška
+- očekivanje trajanja života
+- sloboda donošenja odluka
+- darežljivost
+- percepcija korupcije
+- dohodak
+- bogatstvo
+
+Kad promatramo utjecaj samo jedne nezavisne varijable X na neku zavisnu varijablu Y, grafički je moguće dobiti jako dobar dojam o njihovom odnosu - tu je najčešće od pomoći scatter plot. Pogledajmo kako izgledaju scatter plot-ovi naših varijabli:
+
+```{r scatter plots}
+
+plot(whr2021$`Logged GDP per capita`, whr2021$`Ladder score`) #graficki prikaz podataka
+plot(whr2021$`Social support`, whr2021$`Ladder score`) #graficki prikaz podataka
+plot(whr2021$`Healthy life expectancy`, whr2021$`Ladder score`) #graficki prikaz podataka
+plot(whr2021$`Freedom to make life choices`, whr2021$`Ladder score`) #graficki prikaz podataka
+plot(whr2021$`Generosity`, whr2021$`Ladder score`) #graficki prikaz podataka
+plot(whr2021$`Perceptions of corruption`, whr2021$`Ladder score`) #graficki prikaz podataka
+plot(whr2021$`Income Gini`, whr2021$`Ladder score`) #graficki prikaz podataka
+plot(whr2021$`Wealth Gini`, whr2021$`Ladder score`) #graficki prikaz podataka
+
+```
+Kao što smo već ranije spomenuli, modelom linearne regresije pokušati ćemo predviditi sreću neke nacije pa napišimo stoga što smo dosad naučili o linearnoj regresiji.
+
+## Linearna regresija
+
+Linearna regresija korisna je u raznim istraživačkim i praktičnim situacijama, a daje odgovore na nekoliko bitnih pitanja, od kojih nas zanimjaju sljedeća:
+
+- Postoji li veza između ulazne varijable (ili više ulaznih varijabli) - regresora, i izlazne varijable (reakcije), unašem slučaju razine sreće?
+- Koliko je jaka ta veza?
+- Koje ulazne varijable najviše utječu na izlaznu varijablu i koliko je jak taj efekt?
+
+### Model linearne regresije i estimacija parametara 
+
+Model linearne regresije pretpostavlja linearnu vezu između ulaznih i izlaznih varijabli:
+$$Y = \beta_0 + \sum_{j = 1}^{p}\beta_jx_j + \epsilon$$
+Pretpostavke modela: 
+
+- linearnost veze $X$ i $Y$
+- pogreške nezavisne, homogene i normalno distribuirane s $\epsilon \sim \mathcal{N}(0,\sigma^2)$
+
+Iz podataka je moguće dobiti procjenu modela:
+$$\hat{Y} = b_0 + \sum_{j = 1}^{p}b_jx_j + e,$$
+odnosno:
+$$\hat{\mathbf{y}} = \mathbf{X} \mathbf{b} + \mathbf{e}$$
+u matričnom zapisu.
+
+Procjena je zasnovana na metodi najmanjih kvadrata, tj. minimizaciji tzv. "sum of squared errors":
+$$SSE = \sum_{i = 1}^{N}(y_i - \hat{y}_i)^2 = (\mathbf{y}-\mathbf{X}\mathbf{b})^T(\mathbf{y}-\mathbf{X}\mathbf{b})$$
+Pogledajmo onda sada za koje od ponuđenih varijabli očekujemo da bi mogle biti dobar prediktor razine sreće.
+
+Iz grafova se vidi da GDP, socijalna podrška, očekivanje trajanja života i sloboda donošenja odluka imaju utjecaja na razinu sreće. Darežljivost, percepcija korupcije, dohodak i bogatstvo su slabiji kandidati za modeliranje razine sreće.
+
+Pomoću modela jednostavne regresije, ispitati ćemo pojedinačni utjecaj svake varijable.
+```{r regresija}
+
+fit.gdp = lm(formula = whr2021$`Ladder score`~whr2021$`Logged GDP per capita`,data=whr2021) #linearni model ocjene srece i GDP-a
+fit.ssupp = lm(formula = whr2021$`Ladder score`~whr2021$`Social support`,data=whr2021) #linearni model ocjene srece i socijalne podrske
+fit.hle = lm(formula = whr2021$`Ladder score`~whr2021$`Healthy life expectancy`,data=whr2021) #linearni model ocjene srece i ocekivanja trajanja zivota
+fit.frd = lm(formula = whr2021$`Ladder score`~whr2021$`Freedom to make life choices`,data=whr2021) #linearni model ocjene srece i slobode donosenja odluka
+fit.gen = lm(formula = whr2021$`Ladder score`~whr2021$`Generosity`,data=whr2021) #linearni model ocjene srece i darezljivosti
+fit.corr = lm(formula = whr2021$`Ladder score`~whr2021$`Perceptions of corruption`,data=whr2021) #linearni model ocjene srece i percepcije korupcije
+fit.inc = lm(formula = whr2021$`Ladder score`~whr2021$`Income Gini`,data=whr2021) #linearni model ocjene srece i dohotka
+fit.wlth = lm(formula = whr2021$`Ladder score`~whr2021$`Wealth Gini`,data=whr2021) #linearni model ocjene srece i bogatstva
+
+plot(whr2021$`Logged GDP per capita`, whr2021$`Ladder score`) #graficki prikaz podataka
+lines(whr2021$`Logged GDP per capita`,fit.gdp$fitted.values,col='red') #graficki prikaz procijenjenih vrijednosti iz modela
+
+plot(whr2021$`Social support`, whr2021$`Ladder score`) #graficki prikaz podataka
+lines(whr2021$`Social support`,fit.ssupp$fitted.values,col='red') #graficki prikaz procijenjenih vrijednosti iz modela
+
+plot(whr2021$`Healthy life expectancy`, whr2021$`Ladder score`) #graficki prikaz podataka
+lines(whr2021$`Healthy life expectancy`,fit.hle$fitted.values,col='red') #graficki prikaz procijenjenih vrijednosti iz modela
+
+plot(whr2021$`Freedom to make life choices`, whr2021$`Ladder score`) #graficki prikaz podataka
+lines(whr2021$`Freedom to make life choices`,fit.frd$fitted.values,col='red') #graficki prikaz procijenjenih vrijednosti iz modela
+
+plot(whr2021$`Generosity`, whr2021$`Ladder score`) #graficki prikaz podataka
+lines(whr2021$`Generosity`,fit.gen$fitted.values,col='red') #graficki prikaz procijenjenih vrijednosti iz modela
+
+plot(whr2021$`Perceptions of corruption`, whr2021$`Ladder score`) #graficki prikaz podataka
+lines(whr2021$`Perceptions of corruption`,fit.corr$fitted.values,col='red') #graficki prikaz procijenjenih vrijednosti iz modela
+
+plot(whr2021$`Income Gini`, whr2021$`Ladder score`) #graficki prikaz podataka
+lines(whr2021$`Income Gini`,fit.inc$fitted.values,col='red') #graficki prikaz procijenjenih vrijednosti iz modela
+
+plot(whr2021$`Wealth Gini`, whr2021$`Ladder score`) #graficki prikaz podataka
+lines(whr2021$`Wealth Gini`,fit.wlth$fitted.values,col='red') #graficki prikaz procijenjenih vrijednosti iz modela
+
+```
+
+Nagibi pravaca linearne regresije nam pokazuju utjecaj pojedinih varijabli na izlaznu varijablu. Kako bismo usporedili i analizirali dobivene modele, provjeriti ćemo da pretpostavke modela nisu narušene. Pritom su najbitnije pretpostavke o regresorima (u multivarijatnoj regresiji regresori ne smiju biti međusobno jako korelirani) i o rezidualima (normalnost reziduala i homogenost varijance).
+
+## Provjera normalnosti
+
+Normalnost reziduala provjeriti ćemo grafički pomoću histograma i kvantil-kvantil plota te statistički s Kolmogorov-Smirovljevim testom i Lillieforsovom korekcijom.
+
+##### Provjera normalnosti GDP-a
+
+```{r norm gdp}
+plot(fit.gdp$residuals) #gledajuci reziduale na ovaj nacin tesko je suditi o normalnosti
+
+hist((fit.gdp$residuals))
+hist(rstandard(fit.gdp))
+
+qqnorm(rstandard(fit.gdp))
+qqline(rstandard(fit.gdp))
+
+plot(fit.gdp$fitted.values,fit.gdp$residuals)
+
+ks.test(rstandard(fit.gdp),'pnorm')
+
+require(nortest)
+lillie.test(rstandard(fit.gdp))
+```
+
+
+##### Provjera normalnosti socijalne podrške
+
+```{r norm ssupp}
+plot(fit.ssupp$residuals) #gledajuci reziduale na ovaj nacin tesko je suditi o normalnosti
+
+hist((fit.ssupp$residuals))
+hist(rstandard(fit.ssupp))
+
+qqnorm(rstandard(fit.ssupp))
+qqline(rstandard(fit.ssupp))
+
+plot(fit.ssupp$fitted.values,fit.ssupp$residuals)
+
+ks.test(rstandard(fit.ssupp),'pnorm')
+lillie.test(rstandard(fit.ssupp))
+```
+
+
+##### Provjera normalnosti očekivanja trajanja života
+
+```{r norm hle}
+plot(fit.hle$residuals) #gledajuci reziduale na ovaj nacin tesko je suditi o normalnosti
+
+hist((fit.hle$residuals))
+hist(rstandard(fit.hle))
+
+qqnorm(rstandard(fit.hle))
+qqline(rstandard(fit.hle))
+
+plot(fit.hle$fitted.values,fit.hle$residuals)
+
+ks.test(rstandard(fit.hle),'pnorm')
+lillie.test(rstandard(fit.hle))
+```
+
+
+##### Provjera normalnosti slobode donošenja odluka
+
+```{r norm frd}
+plot(fit.frd$residuals) #gledajuci reziduale na ovaj nacin tesko je suditi o normalnosti
+
+hist((fit.frd$residuals))
+hist(rstandard(fit.frd))
+
+qqnorm(rstandard(fit.frd))
+qqline(rstandard(fit.frd))
+
+plot(fit.frd$fitted.values,fit.frd$residuals)
+
+ks.test(rstandard(fit.frd),'pnorm')
+lillie.test(rstandard(fit.frd))
+```
+
+##### Provjera normalnosti darežljivosti
+
+```{r norm gen}
+plot(fit.gen$residuals) #gledajuci reziduale na ovaj nacin tesko je suditi o normalnosti
+
+hist((fit.gen$residuals))
+hist(rstandard(fit.gen))
+
+qqnorm(rstandard(fit.gen))
+qqline(rstandard(fit.gen))
+
+plot(fit.gen$fitted.values,fit.gen$residuals)
+
+ks.test(rstandard(fit.gen),'pnorm')
+lillie.test(rstandard(fit.gen))
+```
+
+##### Provjera normalnosti korupcije
+
+```{r norm corr}
+plot(fit.corr$residuals) #gledajuci reziduale na ovaj nacin tesko je suditi o normalnosti
+
+hist((fit.corr$residuals))
+hist(rstandard(fit.corr))
+
+qqnorm(rstandard(fit.corr))
+qqline(rstandard(fit.corr))
+
+plot(fit.corr$fitted.values,fit.corr$residuals)
+
+ks.test(rstandard(fit.corr),'pnorm')
+lillie.test(rstandard(fit.corr))
+```
+
+##### Provjera normalnosti dohotka
+
+```{r norm inc}
+plot(fit.inc$residuals) #gledajuci reziduale na ovaj nacin tesko je suditi o normalnosti
+
+hist((fit.inc$residuals))
+hist(rstandard(fit.inc))
+
+qqnorm(rstandard(fit.inc))
+qqline(rstandard(fit.inc))
+
+plot(fit.inc$fitted.values,fit.inc$residuals)
+
+ks.test(rstandard(fit.inc),'pnorm')
+lillie.test(rstandard(fit.inc))
+```
+
+##### Provjera normalnosti prihoda
+
+```{r norm wlth}
+plot(fit.wlth$residuals) #gledajuci reziduale na ovaj nacin tesko je suditi o normalnosti
+
+hist((fit.wlth$residuals))
+hist(rstandard(fit.wlth))
+
+qqnorm(rstandard(fit.wlth))
+qqline(rstandard(fit.wlth))
+
+plot(fit.wlth$fitted.values,fit.wlth$residuals)
+
+ks.test(rstandard(fit.wlth),'pnorm')
+lillie.test(rstandard(fit.wlth))
+```
+
+Iz dobivenih histograma reziduala i QQ-plota, možemo zaključiti da svi osim varijable Perception of corruption približno zadovoljavaju zahtjev o normalnosti reziduala.
+
+
+## Koja je od dostupnih varijabli najbolji prediktor razine sreće?
+
+### Ocjena kvalitete modela i statističko zaključivanje o procijenjenom modelu
+Ako pretpostavke modela nisu (neprihvatljivo) prekršene, moguće je primijeniti različite statističke testove o procijenjenim koeficijentima i modelu. 
+
+#### t-test koeficijenata modela
+Budući da vrijedi $B_i\sim N(\mu_{B_i},\sigma_{B_i})$, $\mu_{B_i} = \beta_i$, statistika 
+$$T = \frac{B_i - \beta_i}{SE(B_i)}$$
+ima $t$-distribuciju s $n-k-1$ stupnjeva slobode, gdje je $k$ broj parametara. Većina programskih paketa, pa tako i R, pri estimiranju koeficijenata linearne regresije automatski testira $\beta_i = 0$. One koeficijente za koje možemo odbaciti $H_0: \beta_i = 0$ u korist $H_1: \beta_i \neq 0$ zovemo \textbf{značajni koeficijenti}.
+
+### Mjere kvalitete prilagodbe modela podatcima
+
+#### SSE
+Mjera koju minimiziramo estimiranjem parametara modela ("fitanjem na podatke") je SSE:
+$$SSE = \sum_{i = 1}^{N}(y_i - \hat{y}_i)^2$$
+
+#### $\mathbf{R^2}$
+Vrlo česta mjera kvalitete prilagodbe modela je koeficijent deteminacije, definiran kao:
+$$R^2 = 1 - \frac{SSE}{SST},$$
+gdje je: $SST = \sum_{i = 1}^{N}(y_i - \bar{y}_i)^2$ tzv. "total corrected sum of squares". Koeficijent determinacije $R^2$ je za linearne modele po definiciji $R^2 \in [0,1]$ i opisuje koji postotak varijance u izlaznoj varijabli $Y$ je estimirani linearni model objasnio/opisao.
+
+#### Adjusted $\mathbf{R^2}$
+Prilagođeni koeficijent determinacije penalizira dodatne parametre u modelu:
+$$R_{adj}^2 = 1 - \frac{SSE/(n-k-1)}{SST/(n-1)}.$$
+
+### F-test
+Za ispitivanje signifikantnosti čitavog modela koristi se F-statistika:
+$$ f = \frac{SSR/k}{SSE/(n-k-1)}, $$
+gdje je $SSR = \sum_{i=1}^n(\hat{y}_i-\bar{y})^2$.
+
+Sve navedene mjere vidjet ćemo pozivanjem summary() za modele jednostavne regresije, koje smo dosad napravili. 
+
+```{r mjer kval}
+summary(fit.gdp)
+summary(fit.ssupp)
+summary(fit.hle)
+summary(fit.frd)
+summary(fit.gen)
+summary(fit.corr)
+summary(fit.inc)
+summary(fit.wlth)
+```
+## Zaključak 2. pitanja s pojavom novog pitanja 
+
+Dosad smo iz grafičkih prikaza mogli vidjeti kako najviše varijabla GDP, pa onda i varijable Social Support, Healthy life expectancy te Freedom to make life choices imaju vrlo jak efekt na Ladder score, tj. razinu sreće.
+Vidimo da su za točno te varijable i najveće vrijednosti R2). Dakle, te varijable su onda i najbolji prediktori razine sreće, a s obzirom da varijabla GDP ima najveći R2, zaključujemo da je ona najbolji prediktor sreće.
+
+Zbog daljnje analize,  prisjetimo se da varijabla Perception of Corruption ne zadovoljava pretpostavku o normalnosti reziduala, te primijetimo da je za varijablu Generosity udio varijance blizu nuli te nam F-test pokazuje da taj model nije statistički značajan.
+
+Također, iako nisu svi modeli jednako kvalitetni, u svim ostalim slučajevima, osim varijabli Percepction of Corruption i Generosity, koeficijenti uz zavisnu varijablu su značajni, te F-testovi upućuju na to i da su svi modeli značajni (objašnjavaju značajno više varijance od nul
+modela). Zaključujemo da čak i varijable Income gini i Wealth gini nisu suvišne u modeliranju.
+
+No, postavlja nam se prirodno pitanje - mogu li sve varijable višestrukom regresijom bolje predvidjeti razinu sreće od varijable GDP i kojom kombinacijom tih varijabli? U nastavku se bavimo tim pitanjem.
+
+### NAPOMENA: pogledati valja li ovaj zaključak i na temelju gore danih t-testa 
+##itd proučiti to još malo prije slanja i prokomentirati
+
+## Dodatno pitanje: Može li višestruka regresija bolje predvidjeti razinu sreće od varijable GDP per Capital?
+### Koje će varijable biti uključene?
+
+## Višestruka regresija
+
+```{r mult_reg_cor}
+fit.multi = lm(formula=whr2021$`Ladder score`~whr2021$`Logged GDP per capita`+whr2021$`Social support`+whr2021$`Healthy life expectancy`+whr2021$`Freedom to make life choices`+whr2021$`Income Gini`+whr2021$`Wealth Gini`, data=whr2021)
+summary(fit.multi)
+plot(fit.multi)
+```
+
+### Kovarijacijska matrica
+
+Regresija s jako koreliranim ulaznim varijablama će uglavnom dati neke rezultate, ali na temelju njih ne
+možemo donositi nikakve zaključke. U slučaju savršene linearne zavisnosti ili koreliranosti ulaznih varijabli,
+procjena regresijskog modela će biti nestabilna i barem jedan koeficijent će biti NA.
+Stoga je potrebno odabrati onaj podskup varijabli za koje smatramo da objašnjavaju različite efekte u podatcima i nisu međusobno (previše) korelirane.
+
+Gledat ćemo matricu Pearsonovih koeficijenata korelacije, a ne kovarijacijsku matricu jer podatci u varijablama nisu na jednakim skalama.
+UMETNUTI OVDJE FORMULU PEARSONOVIH KOEFICIJENATA AKO JE OVAJ DIO UOPCE BITAN
+Ako je koeficijent korelacije = 1, vektori varijabli leže na istom pravcu i imaju istu orijentaciju, a ako koeficijent korelacije = -1, suprotnu orijentaciju. Ako je koeficijent korelacije = 0, vektori su neovisni.
+
+### NAPOMENA: Pogledati treba li ova kovarijacijska matrica uopće??
+```{r cor}
+M <- cbind(whr2021$`Ladder score`,whr2021$`Logged GDP per capita`,whr2021$`Social support`,whr2021$`Healthy life expectancy`,whr2021$`Freedom to make life choices`,whr2021$`Generosity`,whr2021$`Perceptions of corruption`,whr2021$`Income Gini`,whr2021$`Wealth Gini`)
+cor(M)
+
+```
+
+Primijetimo da varijable Logged GDP per capita, Social support i Healthy life expectancy imaju koeficijent korelacije veći od 0.75 s varijablom Ladder score - razinom sreće. Pogledajmo to malo detaljnije, kao i njihove međusobne koeficijente korelacije:
+
+```{r cor_test}
+cor.test(whr2021$`Ladder score`,whr2021$`Logged GDP per capita`)
+cor.test(whr2021$`Ladder score`,whr2021$`Social support`)
+cor.test(whr2021$`Ladder score`,whr2021$`Healthy life expectancy`)
+#2.Logged GDP per capita vs. 3.Social Support
+cor.test(whr2021$`Logged GDP per capita`,whr2021$`Social support`)
+#2.Logged GDP per capita vs. 4.Healthy life expectancy
+cor.test(whr2021$`Logged GDP per capita`,whr2021$`Healthy life expectancy`)
+#3.Social support vs. 4.Healthy life expectancy
+cor.test(whr2021$`Social support`,whr2021$`Healthy life expectancy`)
+```
+
+Vidimo da varijable Logged GDP per capita, Social support i Healthy life expectancy međusobno imaju visok koeficijent korelacije, dakle za pretpostaviti je da sigurno treba izbaciti dvije, a ostaviti jednu. Također, varijable Social support i Healthy life expectancy imaju jako velik koeficijent korelacije s varijablom GDP per capita,a manji međusobno, pa bi pretpostavka bila da možda izbacimo GDP, a gledamo samo te druge dvije varijable. No, s obzirom da nam je GDP najbolje modelirao razinu sreće, pretpostavljamo da će naš model ipak biti bolji s uključenom varijablom GDP.
+
+Pogledajmo kako izgleda regresija bez varijable GDP. 
+
+### Višestruka regresija bez varijable GDP per capita
+
+```{r mult_reg}
+fit.nogdp = lm(formula=whr2021$`Ladder score`~whr2021$`Social support`+whr2021$`Healthy life expectancy`+whr2021$`Freedom to make life choices`+whr2021$`Income Gini`+whr2021$`Wealth Gini`, data=whr2021)
+#without GDP
+summary(fit.nogdp)
+plot(fit.nogdp)
+
+
+```
+
+Možemo primijetiti da je R2 ipak veći kada je varijabla GDP uključena.
+U nastavku ćemo još vidjeti možemo li transformirati podatke da dobijemo bolji model.
+
+### Transformacije podataka, dodavanje interakcijskih članova
+Promatranjem scatter plotova s početka, zaključujemo da bismo mogli probati modificirati varijable Income Gini i Social support, dodavanjem kvadrata tih ulaznih varijabli. Potencijalno, s obzirom na sličnost grafova GDP i HLE s grafom varijable Social Support, naknadno ćemo ispitati ima li njihova transformacija utjecaja na R2 modela.
+
+Pogledajmo sada kako izgleda model predikcije razine sreće transformiranom varijablom Social Support.
+
+```{r trans_data_soc}
+# moguce je provjeriti gore navedenu tvrdnju prvo na primjeru samo Social Support
+fit.ssupp.sq = lm(formula=whr2021$`Ladder score`~ whr2021$`Social support` + I(whr2021$`Social support`^2), data=whr2021)
+summary(fit.ssupp.sq)
+```
+
+Vidimo da je R2 ovakvog modela veći od R2 linearnog modela na netransformiranim podatcima.
+
+Prikažimo grafički tu nelinearnu krivulju:
+
+```{r unlin_soc}
+f = function(x, coeffs)
+return(coeffs[[1]] + coeffs[[2]] * x + coeffs[[3]] * x^2)
+plot(whr2021$`Social support`,whr2021$`Ladder score`)
+curve(f(x, fit.ssupp.sq$coefficients), add = TRUE, col = "red")
+```
+
+Pogledajmo sada za Income Gini:
+
+```{r trans_data_inc}
+# moguce je provjeriti gore navedenu tvrdnju prvo na primjeru samo Social Support
+fit.inc.sq = lm(formula=whr2021$`Ladder score`~ whr2021$`Income Gini` + I(whr2021$`Income Gini`^2), data=whr2021)
+summary(fit.inc.sq)
+
+
+```
+
+```{r unlin_inc}
+plot(whr2021$`Income Gini`,whr2021$`Ladder score`)
+curve(f(x, fit.inc.sq$coefficients), add = TRUE, col = "red")
+
+```
+
+Model predikcije sreće s transformiranom varijablom Healthy life expectancy:
+
+```{r trans_data_hle}
+# moguce je provjeriti gore navedenu tvrdnju prvo na primjeru samo Social Support
+fit.hle.sq = lm(formula=whr2021$`Ladder score`~ whr2021$`Healthy life expectancy` + I(whr2021$`Healthy life expectancy`^2), data=whr2021)
+summary(fit.hle.sq)
+
+
+```
+
+```{r unlin_hle}
+plot(whr2021$`Healthy life expectancy`,whr2021$`Ladder score`)
+curve(f(x, fit.hle.sq$coefficients), add = TRUE, col = "red")
+
+```
+
+Model predikcije sreće s transformiranom varijablom Logged GDP per capita:
+
+```{r trans_data_gdp}
+# moguce je provjeriti gore navedenu tvrdnju prvo na primjeru samo Social Support
+fit.gdp.sq = lm(formula=whr2021$`Ladder score`~ whr2021$`Logged GDP per capita` + I(whr2021$`Logged GDP per capita`^2), data=whr2021)
+summary(fit.gdp.sq)
+
+
+```
+
+```{r unlin_gdp}
+plot(whr2021$`Logged GDP per capita`,whr2021$`Ladder score`)
+curve(f(x, fit.gdp.sq$coefficients), add = TRUE, col = "red")
+
+```
+
+Uključivanjem ovako transformiranih varijabli moguće je dodatno poboljšati ukupni model višestruke regresije. Budući da vidimo da je, nakon kvadratne transformacije varijabli GDP, Social Support, Healthy life expectancy i Income Gini, postignuto povećanje R2 u njihovim modelima razine sreće, uključit ćemo ih u višestruku regresiju.
+
+```{r reg_all}
+fit.multi.sq = lm(formula=whr2021$`Ladder score`~whr2021$`Logged GDP per capita`+I(whr2021$`Logged GDP per capita`^2)+whr2021$`Social support`+I(whr2021$`Social support`^2)+whr2021$`Healthy life expectancy`+I(whr2021$`Healthy life expectancy`^2)+whr2021$`Freedom to make life choices`+whr2021$`Income Gini`+I(whr2021$`Income Gini`^2)+whr2021$`Wealth Gini`, data=whr2021)
+summary(fit.multi.sq)
+plot(fit.multi.sq)
+```
+
+
+Pogledajmo kako izgleda model s varijablama Social Support i HLE, ali bez varijable GDP.
+
+```{r reg_sh}
+fit.sh.sq = lm(formula=whr2021$`Ladder score`~whr2021$`Social support`+I(whr2021$`Social support`^2)+whr2021$`Healthy life expectancy`+I(whr2021$`Healthy life expectancy`^2)+whr2021$`Freedom to make life choices`+whr2021$`Income Gini`+I(whr2021$`Income Gini`^2)+whr2021$`Wealth Gini`, data=whr2021)
+#bez GDP
+summary(fit.sh.sq)
+```
+
+Kao što smo naslutili, rezultati upućuju na to da varijabla Logged GDP per capita daje dosta korisnu informaciju u modelu, čak i kad
+koristimo $R_{adj}^2$.
+Pogledajmo sada kako izgleda model sa svim varijablama osim Wealth Gini i Income Gini s obzirom da one imaju najmanji utjecaj na model.
+
+```{r reg_s}
+fit.s.sq = lm(formula=whr2021$`Ladder score`~whr2021$`Logged GDP per capita`+I(whr2021$`Logged GDP per capita`^2)+whr2021$`Social support`+I(whr2021$`Social support`^2)+whr2021$`Healthy life expectancy`+I(whr2021$`Healthy life expectancy`^2)+whr2021$`Freedom to make life choices`, data=whr2021)
+#bez GDP
+summary(fit.s.sq)
+```
+
+Rezultati upućuju na to da varijable Wealth Gini i Income Gini ipak sadrže korisne informacije za predviđanje sreće u modelu.
+
+### NAPOMENA: Razmisliti treba li ubaciti kategoriJsku varijablu regija ili ?? DOVRŠITI DO KRAJA ZAKLJUČAK
+
+## Zaključak 2. pitanja i dodatnog pitanja
+
+Ranije smo zaključili da je od ponuđenih varijabli, varijabla Logged GDP per capita najbolji prediktor sreće jednostavnom regresijom. No, što je s višestrukom regresijom? Rezultati višestruke regresije nam pak upućuju da je za bolje predviđanje razine sreće ipak bolje uključiti više varijabli.
