@@ -51,7 +51,7 @@ head(whr2021)
 
 ## Case study 1: Je li razina sreće veća u 2020. ili 2021. godini?
 
-Ovo pitanje ćemo provjeravati uparenim t-testom. Upareni t-test koristimo kako bismo usporedili... DOPIŠI
+Ovo pitanje ćemo provjeravati uparenim t-testom. Upareni t-test koristimo kada želimo vidjeti je li srednja vrijednost razlike parova podataka jednaka nuli ili ne.
 Podaci koje koristimo su razlike rezultata WHR-a u 2021. i 2020. godini za iste države. 
 
 Prvo ćemo napraviti dva boxplota kako bi vizualizirali podatke za pojedinu godinu.
@@ -61,6 +61,8 @@ boxplot(whr2020$`Ladder score`, whr2021$`Ladder score`, names = c("Ladder scores
 ```
 
 Vidimo da su srednje vrijednosti rezultata za obje godine otprilike jednake.
+
+Kada smo pogledali podatke, uočili smo da su rezultati za Sjevernu Makedoniju u dokumentu za 2020. godinu navedeni pod imenom "Makedonija". Odlučili smo joj u tom dokumentu promijeniti naziv u "Sjeverna Makedonija", kako bi on bio isti kakav je i u dokumentu za 2021. godinu, kako bi se podaci mogli dobro spojiti.
 
 Sada ćemo prikazati razlike rezultata pomoću histograma kako bismo se uvjerili u normalnost podataka, budući da je to uvjet za provođenje uparenog t-testa.
 
