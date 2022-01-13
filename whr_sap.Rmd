@@ -10,23 +10,25 @@ library("readxl")
 library(imputeTS)
 ```
 
+## Motivacija i opis problema
+World Happiness Report je publikacija Mreže rješenja za održivi razvoj Ujedinjenih naroda koja sadrži po-
+datke o osjećaju sreće pojedinih nacija. Podatci su dobiveni kroz ankete koje provode Gallup i Lloyd’s
+Register Foundation. Prvi je izvještaj objavljen 2012. godine, a od 2016. se objavljuje na Međunarodni dan
+sreće 20. ožujka.
 
-## Možemo li temeljem drugih dostupnih variabli predvidjeti sreću neke nacije? 
-### Koja je od njih najbolji prediktor sreće?
-
-Jedna nacija u našem data setu jednaka jednom retku, te nam je dana varijabla Ladder score, tj. razina sreće, pa imamo podatak o razini sreće svake države. Stoga naslućujemo da je linearna regresija način kako odgovoriti na ova pitanja. Prvo ćemo nadopuniti nedostajuće vrijednosti, a onda se pozabaviti linearnom regresijom.
-
-#### Učitavanje podataka o svjetskom bogatstvu 2021. godine
+### Učitavanje podataka o svjetskom bogatstvu 2021. godine
 
 ```{r wealth} 
-wealth_data <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/credit_suisse_global_wealth_databook_2021_table_31.xlsx")
+wealth <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/credit_suisse_global_wealth_databook_2021_table_31.xlsx")
 
-dim(wealth_data)
-head(wealth_data)
+dim(wealth)
+head(wealth)
 ```
 
 
-#### Učitavanje podataka o globalnoj sreći 2020. godine
+### Učitavanje podataka o globalnoj sreći 2020. godine
+
+You can also embed plots, for example:
 
 ```{r whr 2020}
 whr2020 <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2020.xlsx")
@@ -35,7 +37,9 @@ dim(whr2020)
 head(whr2020)
 ```
 
-#### Učitavanje podataka o globalnoj sreći 2021. godine
+### Učitavanje podataka o globalnoj sreći 2021. godine
+
+You can also embed plots, for example:
 
 ```{r whr 2021}
 whr2021 <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2021.xlsx")
@@ -43,6 +47,100 @@ whr2021 <- read_excel("C:/Users/Sara/Documents/My Fax/SAP/whr-sap/files/WHR_2021
 dim(whr2021)
 head(whr2021)
 ```
+
+
+## Case study 1: Je li razina sreće veća u 2020. ili 2021. godini?
+
+Ovo pitanje ćemo provjeravati uparenim t-testom. Upareni t-test koristimo kako bismo usporedili... DOPIŠI
+Podaci koje koristimo su razlike rezultata WHR-a u 2021. i 2020. godini za iste države. 
+
+Prvo ćemo napraviti dva boxplota kako bi vizualizirali podatke za pojedinu godinu.
+
+```{r boxplot for ladder scores}
+boxplot(whr2020$`Ladder score`, whr2021$`Ladder score`, names = c("Ladder scores in 2020.", "Ladder scores in 2021."))
+```
+
+Vidimo da su srednje vrijednosti rezultata za obje godine otprilike jednake.
+
+Sada ćemo prikazati razlike rezultata pomoću histograma kako bismo se uvjerili u normalnost podataka, budući da je to uvjet za provođenje uparenog t-testa.
+
+Također ćemo ih prikazati pomoću boxplota, da lakše uočimo stršeće vrijednosti.
+
+```{r histogram for ladder score differences}
+whr_merged = merge(whr2021, whr2020, by="Country name")
+ladderScore_differences = whr_merged$`Ladder score.x`- whr_merged$`Ladder score.y`
+
+hist(ladderScore_differences, xlab="Ladder score difference", main="Histogram of the differences between ladder scores in 2021. and 2020.")
+boxplot(ladderScore_differences, main="Boxplot of the differences between ladder scores in 2021. and 2020.")
+```
+
+Mogli bismo reći da su podaci približno normalno distribuirani, no da su ipak više zbijeni oko sredine.
+
+S ciljem povećavanja normalnosti, izbacit ćemo stršeće vrijednosti te ponovno prikazati histogram i boxplot dobivenih podataka.
+
+```{r getting rid of outliers}
+ladderScore_differences_no_outliers = ladderScore_differences[!ladderScore_differences %in% boxplot.stats(ladderScore_differences)$out]
+
+length(ladderScore_differences) - length(ladderScore_differences_no_outliers)
+
+hist(ladderScore_differences_no_outliers, xlab="Ladder score difference", main="Histogram of ladder score differences without outliers")
+boxplot(ladderScore_differences_no_outliers, main="Boxplot of ladder score differences without outliers")
+
+```
+
+Uočavamo da su nam sadašnji podaci distribuirani puno više normalno, nego što su prije bili, a izbacili smo samo 8 vrijednosti.
+
+Da bismo se uvjerili u normalnost podataka, možemo je provjeriti i pomoću qq-plota.
+
+```{r qq-plot for ladder score differences}
+qqnorm(ladderScore_differences_no_outliers, pch = 1, frame = FALSE, main="Differences between ladder scores in 2021. and 2020.")
+qqline(ladderScore_differences_no_outliers, col = "steelblue", lwd = 2)
+```
+
+Kao i histogram, qq-plot nam upućuje na normalnost podataka. Jedini podaci koji se ne ravnaju savršeno po normalnoj distribuciji su oni rubni.
+
+Još da budemo sasvim sigurni u normalnost naših podataka, provest ćemo Kolmogorov-Smirnovljev test. Hipoteze su nam sljedeće:
+$$ \begin{aligned}
+H_0&: \text{podaci su normalno distribuirani} \\
+H_1&: \text{podaci nisu normalno distribuirani}
+\end{aligned} $$
+
+```{r ks test for ladder score differences}
+ks.test(ladderScore_differences_no_outliers, "pnorm", mean(ladderScore_differences_no_outliers), sd(ladderScore_differences_no_outliers))
+```
+
+Budući da je p-vrijednost znatno veća od 0.05, ne odbijamo nul hipotezu o normalnosti podataka te možemo krenuti s obostranim t-testom.
+
+Hipoteze nam glase ovako:
+$$ \begin{aligned}
+H_0&: \mu_\text{2021} = \mu_\text{2020} \\
+H_1&: \mu_\text{2021} \neq \mu_\text{2020} \\
+\end{aligned} $$
+
+```{r paired two-sided t-test for ladder score differences}
+t.test(whr_merged$`Ladder score.x`, whr_merged$`Ladder score.y`, paired=TRUE, alternative="two.sided",conf.level = 0.95)
+```
+
+Budući da smo dobili p-vrijednost manju od 0.05, odbijamo hipotezu o jednakosti rezultata WHR-a u 2020. i 2021. godini u korist alternativne hipoteze.
+
+Provest ćemo još jedan t-test, no ovaj put jednostrani sa sljedećim hipotezama:
+$$ \begin{aligned}
+H_0&: \mu_\text{2021} <= \mu_\text{2020} \\
+H_1&: \mu_\text{2021} > \mu_\text{2020} \\
+\end{aligned} $$
+
+```{r paired one-sided t-test for ladder score differences}
+t.test(whr_merged$`Ladder score.x`, whr_merged$`Ladder score.y`, paired=TRUE, alternative="greater",conf.level = 0.95)
+```
+
+Zbog p-vrijednosti manje od 0.05, odbijamo nul hipotezu i prihvaćemo alternativnu, odnosno da je razina sreće veća u 2021. nego što je bila u 2020. godini.
+
+
+
+## Case study 2: Možemo li temeljem drugih dostupnih variabli predvidjeti sreću neke nacije? 
+### Koja je od njih najbolji prediktor sreće?
+
+Jedna nacija u našem data setu jednaka jednom retku, te nam je dana varijabla Ladder score, tj. razina sreće, pa imamo podatak o razini sreće svake države. Stoga naslućujemo da je linearna regresija način kako odgovoriti na ova pitanja. Prvo ćemo nadopuniti nedostajuće vrijednosti, a onda se pozabaviti linearnom regresijom.
 
 
 ## Nadopunjavanje nedostajućih vrijednosti
@@ -441,7 +539,6 @@ curve(f(x, fit.ssupp.sq$coefficients), add = TRUE, col = "red")
 Pogledajmo sada za Income Gini:
 
 ```{r trans_data_inc}
-# moguce je provjeriti gore navedenu tvrdnju prvo na primjeru samo Social Support
 fit.inc.sq = lm(formula=whr2021$`Ladder score`~ whr2021$`Income Gini` + I(whr2021$`Income Gini`^2), data=whr2021)
 summary(fit.inc.sq)
 
@@ -457,7 +554,6 @@ curve(f(x, fit.inc.sq$coefficients), add = TRUE, col = "red")
 Model predikcije sreće s transformiranom varijablom Healthy life expectancy:
 
 ```{r trans_data_hle}
-# moguce je provjeriti gore navedenu tvrdnju prvo na primjeru samo Social Support
 fit.hle.sq = lm(formula=whr2021$`Ladder score`~ whr2021$`Healthy life expectancy` + I(whr2021$`Healthy life expectancy`^2), data=whr2021)
 summary(fit.hle.sq)
 
@@ -473,7 +569,6 @@ curve(f(x, fit.hle.sq$coefficients), add = TRUE, col = "red")
 Model predikcije sreće s transformiranom varijablom Logged GDP per capita:
 
 ```{r trans_data_gdp}
-# moguce je provjeriti gore navedenu tvrdnju prvo na primjeru samo Social Support
 fit.gdp.sq = lm(formula=whr2021$`Ladder score`~ whr2021$`Logged GDP per capita` + I(whr2021$`Logged GDP per capita`^2), data=whr2021)
 summary(fit.gdp.sq)
 
@@ -520,3 +615,92 @@ Rezultati upućuju na to da varijable Wealth Gini i Income Gini ipak sadrže kor
 ## Zaključak 2. pitanja i dodatnog pitanja
 
 Ranije smo zaključili da je od ponuđenih varijabli, varijabla Logged GDP per capita najbolji prediktor sreće jednostavnom regresijom. No, što je s višestrukom regresijom? Rezultati višestruke regresije nam pak upućuju da je za bolje predviđanje razine sreće ipak bolje uključiti više varijabli.
+
+
+
+## Case study 3: Postoje li razlike u iskazanoj sreći medu različitim regijama?
+
+Na ovo pitanje ćemo odgovoriti korištenjem jednofaktorskom ANOVA metodom.
+  
+
+U sljedećem isječku ćemo prikazati box plot dijagrame sreće po pojedinim regijama.
+
+```{r boxplot for ladder scores 2}
+
+par(mar=c(15,5,1,1))
+boxplot(`Ladder score`~`Regional indicator`,data = whr2021, las = 2, xlab = "" )
+
+```
+
+Boxplot nas upućuje da postoje razlike u iskazanim srećama po regijama.
+To ćemo potvrditi ANOVA metodom.
+
+Uvjeti za ANOVA-u su normalnost i nezavisnost podataka, te homogenost varijanci među regijama.
+Nezavisnost podataka možemo pretpostaviti. 
+Normalnost podataka po regijama ćemo provjeriti s Kolmogorov-Smirnovim testom.Hipoteze su nam sljedeće:
+$$ \begin{aligned}
+H_0&: \text{podaci su normalno distribuirani} \\
+H_1&: \text{podaci nisu normalno distribuirani} \\
+\end{aligned} $$
+te $$ \alpha = 0.05 $$
+```{r ks test for all regions for ladder score}
+
+ks.test(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Central and Eastern Europe'], "pnorm", mean(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Central and Eastern Europe']),sd(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Central and Eastern Europe']))
+hist(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Central and Eastern Europe'])
+
+ks.test(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Commonwealth of Independent States'], "pnorm", mean(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Commonwealth of Independent States']),sd(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Commonwealth of Independent States']))
+hist(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Commonwealth of Independent States'])
+
+ks.test(whr2021$`Ladder score`[whr2021$`Regional indicator`=='East Asia'], "pnorm", mean(whr2021$`Ladder score`[whr2021$`Regional indicator`=='East Asia']),sd(whr2021$`Ladder score`[whr2021$`Regional indicator`=='East Asia']))
+hist(whr2021$`Ladder score`[whr2021$`Regional indicator`=='East Asia'])
+
+ks.test(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Latin America and Caribbean'], "pnorm", mean(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Latin America and Caribbean']),sd(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Latin America and Caribbean']))
+hist(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Latin America and Caribbean'])
+
+ks.test(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Middle East and North Africa'], "pnorm", mean(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Middle East and North Africa']),sd(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Middle East and North Africa']))
+hist(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Middle East and North Africa'])
+
+ks.test(whr2021$`Ladder score`[whr2021$`Regional indicator`=='North America and ANZ'], "pnorm", mean(whr2021$`Ladder score`[whr2021$`Regional indicator`=='North America and ANZ']),sd(whr2021$`Ladder score`[whr2021$`Regional indicator`=='North America and ANZ']))
+hist(whr2021$`Ladder score`[whr2021$`Regional indicator`=='North America and ANZ'])
+
+ks.test(whr2021$`Ladder score`[whr2021$`Regional indicator`=='South Asia'], "pnorm", mean(whr2021$`Ladder score`[whr2021$`Regional indicator`=='South Asia']),sd(whr2021$`Ladder score`[whr2021$`Regional indicator`=='South Asia']))
+hist(whr2021$`Ladder score`[whr2021$`Regional indicator`=='South Asia'])
+
+ks.test(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Southeast Asia'], "pnorm", mean(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Southeast Asia']),sd(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Southeast Asia']))
+hist(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Southeast Asia'])
+
+ks.test(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Sub-Saharan Africa'], "pnorm", mean(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Sub-Saharan Africa']),sd(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Sub-Saharan Africa']))
+hist(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Sub-Saharan Africa'])
+
+ks.test(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Western Europe'], "pnorm", mean(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Western Europe']),sd(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Western Europe']))
+hist(whr2021$`Ladder score`[whr2021$`Regional indicator`=='Western Europe'])
+
+```
+P-vrijednosti na svim testovima su nam veće od kritične vrijednosti te ne odbijamo nul hipotezu.
+
+Sada trebamo analizirati homogenost varijanci regija što ćemo napraviti s Bartlettovim testom. Hipoteze su nam sljedeće:
+$$ \begin{aligned}
+  H_0 & : \sigma_1^2 = \sigma_2^2 = \ldots = \sigma_k^2 \\
+  H_1 & : \neg H_0.
+\end{aligned} $$
+te $$ \alpha = 0.05 $$
+
+```{r bartlett test for all regions for ladder score}
+bartlett.test(whr2021$`Ladder score` ~ whr2021$`Regional indicator`)
+```
+P-vrijednost je manja od kritične vrijednosti tako da ne odbacujemo nul hipotezu.
+
+Sada možemo napraviti jednofaktorsku ANOVA-u. Hipoteze su nam sljedeće:
+$$ \begin{aligned}
+  H_0 & : \mu_1 = \mu_2 = \ldots = \mu_k \\
+  H_1 & : \neg H_0.
+\end{aligned} $$
+te $$ 
+  \alpha = 0.05\\
+  k = 10
+ $$
+```{r ANOVA for lader score }
+luck = aov(whr2021$`Ladder score` ~ whr2021$`Regional indicator`)
+summary(luck)
+```
+Kao što je sugerirano u grafu s početka, ANOVA potvrđuje da postoji razlika u iskazanoj sreći među regijama.
